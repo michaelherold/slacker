@@ -16,7 +16,7 @@ defmodule Slacker.WebAPI do
   defp process_response_body(body) do
     body
     |> Poison.decode!
-    |> Enum.reduce(%{}, fn {k, v}, map -> Dict.put(map, String.to_atom(k), v) end)
+    |> Enum.reduce(%{}, fn {k, v}, map -> Map.put(map, String.to_atom(k), v) end)
   end
 
   defp check_response({:ok, %{status_code: 200, body: %{ok: true} = body}}) do

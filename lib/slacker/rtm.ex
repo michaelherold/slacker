@@ -14,7 +14,7 @@ defmodule Slacker.RTM do
   def websocket_handle({:text, msg}, _conn_state, slacker_pid) do
     {type, msg} =
       Poison.decode!(msg)
-      |> Dict.pop("type")
+      |> Map.pop("type")
 
     GenServer.cast(slacker_pid, {:handle_incoming, type, msg})
 

@@ -17,7 +17,7 @@ defmodule Slacker do
       end
 
       def init(api_token) do
-        GenServer.cast(self, :connect)
+        GenServer.cast(self(), :connect)
         {:ok, %State{api_token: api_token}}
       end
 
@@ -30,7 +30,7 @@ defmodule Slacker do
         Logger.info(~s/Successfully authenticated as user "#{auth.user}" on team "#{auth.team}"/)
 
         {:ok, rtm_response} = Web.rtm_start(state.api_token)
-        {:ok, rtm} = Slacker.RTM.start_link(rtm_response.url, self)
+        {:ok, rtm} = Slacker.RTM.start_link(rtm_response.url, self())
 
         {:noreply, %{state | rtm: rtm}}
       end
