@@ -1,4 +1,7 @@
 defmodule Slacker.Matcher do
+  @moduledoc """
+  Provides a DSL for matching incoming messages.
+  """
 
   defmacro __using__(_opts) do
     quote do
@@ -9,8 +12,9 @@ defmodule Slacker.Matcher do
 
       @before_compile unquote(__MODULE__)
 
-
-      # some integrations don't provide a "text" field, ignore them
+      @doc """
+      Tries to match any incoming message with a text value.
+      """
       def handle_cast({:handle_incoming, "message", %{"text" => _} = msg}, state) do
         match!(self(), msg)
         {:noreply, state}
@@ -20,34 +24,39 @@ defmodule Slacker.Matcher do
 
   defmacro __before_compile__(_env) do
     quote do
+      @doc """
+      Matches against the regular expressesion defined with the `match` macro.
+      """
       def match!(slacker, %{"text" => text} = msg) do
-        Enum.each(@regex_patterns, fn {pattern, [m, f]} ->
+        Enum.each(@regex_patterns, fn {pattern, [module, function]} ->
           match = Regex.run(pattern, text)
           if match do
             [_text | captures] = match
-            :erlang.apply(m, f, [slacker, msg] ++ captures)
+            apply(module, function, [slacker, msg] ++ captures)
           end
         end)
       end
     end
   end
 
+  @doc """
+  Defines a patterns to match messages and the function to perform on match.
+  """
   defmacro match(pattern, function) do
-    {function, []} = Code.eval_quoted(function, [], __ENV__)
-    [m, f] = case function do
-               f when is_atom(f) -> [__CALLER__.module, f]
-               [m, f] -> [m, f]
-             end
+    [module, function] =
+      case function do
+        function when is_atom(function) -> [__CALLER__.module, function]
+        [module, function] -> [module, function]
+      end
 
     quote do
       if is_binary(unquote(pattern)) do
         def match!(slacker, %{"text" => unquote(pattern)} = msg) do
-          :erlang.apply(unquote(m), unquote(f), [slacker, msg])
+          apply(unquote(module), unquote(function), [slacker, msg])
         end
       else
-        @regex_patterns {unquote(pattern), [unquote(m), unquote(f)]}
+        @regex_patterns {unquote(pattern), [unquote(module), unquote(function)]}
       end
     end
   end
-
 end
