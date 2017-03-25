@@ -1,7 +1,7 @@
 defmodule Slacker do
 
   defmodule State do
-    defstruct api_token: nil, rtm: nil, state: nil
+    defstruct api_token: nil, rtm: nil, state: nil, username: nil
   end
 
   defmacro __using__(_opts) do
@@ -32,7 +32,7 @@ defmodule Slacker do
         {:ok, rtm_response} = Web.rtm_start(state.api_token)
         {:ok, rtm} = Slacker.RTM.start_link(rtm_response.url, self())
 
-        {:noreply, %{state | rtm: rtm}}
+        {:noreply, %{state | rtm: rtm, username: auth.user}}
       end
 
       def handle_cast({:send_message, channel, msg}, state) do
